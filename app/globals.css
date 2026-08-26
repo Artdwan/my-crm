@@ -114,7 +114,8 @@ nav {
   overflow-y: auto;
 }
 
-nav button {
+nav button,
+nav a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -125,25 +126,30 @@ nav button {
   font-size: 13.5px;
   color: var(--text-dim);
   text-align: left;
+  text-decoration: none;
 }
 
-nav button:hover {
+nav button:hover,
+nav a:hover {
   background: var(--primary-soft);
   color: var(--foreground);
 }
 
-nav button.active {
+nav button.active,
+nav a.active {
   background: var(--primary);
   color: #fff;
 }
 
-nav button i {
+nav button i,
+nav a i {
   width: 18px;
   text-align: center;
   font-style: normal;
 }
 
-nav button em {
+nav button em,
+nav a em {
   margin-left: auto;
   font-style: normal;
   font-size: 11px;
@@ -152,7 +158,8 @@ nav button em {
   background: rgba(0, 0, 0, 0.07);
 }
 
-nav button.active em {
+nav button.active em,
+nav a.active em {
   background: rgba(255, 255, 255, 0.25);
 }
 
@@ -378,6 +385,67 @@ header p {
   padding: 1px 6px;
   border-radius: 20px;
   margin-left: 6px;
+}
+
+/* ---------- card grid (clients) ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.grid > .card {
+  cursor: pointer;
+}
+
+.grid > p {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ---------- data table (subscriptions) ---------- */
+
+.tablewrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 14px;
+  white-space: nowrap;
+}
+
+.table thead th {
+  background: var(--card-raised);
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: var(--card-raised);
 }
 
 /* ---------- board ---------- */
