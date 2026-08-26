@@ -57,15 +57,29 @@ model Client {
 }
 
 model Subscription {
-  id              Int      @id @default(autoincrement())
-  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id              Int       @id @default(autoincrement())
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId        Int
   subject         String
   periodStart     DateTime
   lessonsCount    Int
-  pricePerLesson  Decimal  @db.Decimal(10, 2)
-  discountPercent Decimal  @db.Decimal(5, 2) @default(0)
-  createdAt       DateTime @default(now())
+  pricePerLesson  Decimal   @db.Decimal(10, 2)
+  discountPercent Decimal   @default(0) @db.Decimal(5, 2)
+  payments        Payment[]
+  createdAt       DateTime  @default(now())
 
   @@unique([clientId, subject, periodStart])
+}
+
+model Payment {
+  id             Int          @id @default(autoincrement())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId Int
+  amount         Decimal      @db.Decimal(10, 2)
+  paidAt         DateTime
+  note           String?
+  receiptName    String?
+  receiptType    String?
+  receiptData    Bytes?
+  createdAt      DateTime     @default(now())
 }

@@ -4,9 +4,16 @@ import { useMemo, useState, type FormEvent } from "react";
 import type { Client, Subscription } from "@prisma/client";
 import { createClient } from "@/app/actions/clients";
 import SubscriptionModal from "@/app/components/subscription-modal";
+import PaymentModal from "@/app/components/payment-modal";
+import type { PaymentDTO } from "@/app/(app)/subscriptions/subscriptions-board";
 import {
+  PAYMENT_STATUS_LABEL,
   formatBYN,
+  formatDate,
   formatPeriod,
+  paidTotal,
+  paymentStatus,
+  remainingAmount,
   subscriptionTotal,
 } from "@/app/lib/subscriptions";
 
@@ -16,6 +23,7 @@ type SubscriptionDTO = Omit<
 > & {
   pricePerLesson: number;
   discountPercent: number;
+  payments: PaymentDTO[];
 };
 
 type ClientWithSubs = Client & { subscriptions: SubscriptionDTO[] };
@@ -28,6 +36,7 @@ export default function ClientsBoard({
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(false);
   const [subModal, setSubModal] = useState(false);
+  const [payingId, setPayingId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [toast, setToast] = useState("");
 
@@ -40,6 +49,8 @@ export default function ClientsBoard({
   );
 
   const selected = clients.find((c) => c.id === selectedId) ?? null;
+  const paying =
+    selected?.subscriptions.find((s) => s.id === payingId) ?? null;
 
   const note = (x: string) => {
     setToast(x);
@@ -204,28 +215,62 @@ export default function ClientsBoard({
               {selected.subscriptions.length === 0 && (
                 <p>Абонементов пока нет</p>
               )}
-              {selected.subscriptions.map((s) => (
-                <div className="todo" key={s.id}>
-                  <div>
-                    <b>
-                      {formatPeriod(s.periodStart)} · {s.subject}
-                    </b>
+              {selected.subscriptions.map((s) => {
+                const total = subscriptionTotal(
+                  s.lessonsCount,
+                  s.pricePerLesson,
+                  s.discountPercent,
+                );
+                const paid = paidTotal(s.payments);
+                const status = paymentStatus(total, paid);
+                const remaining = remainingAmount(total, paid);
+                return (
+                  <div className="subrow" key={s.id}>
+                    <div className="subhead">
+                      <b>
+                        {formatPeriod(s.periodStart)} · {s.subject}
+                      </b>
+                      <span className={`badge ${status.toLowerCase()}`}>
+                        {PAYMENT_STATUS_LABEL[status]}
+                      </span>
+                    </div>
                     <span>
                       {s.lessonsCount} занятий × {s.pricePerLesson} BYN
-                      {s.discountPercent > 0 && ` · скидка ${s.discountPercent}%`}
+                      {s.discountPercent > 0 &&
+                        ` · скидка ${s.discountPercent}%`}
                     </span>
-                    <time>
-                      {formatBYN(
-                        subscriptionTotal(
-                          s.lessonsCount,
-                          s.pricePerLesson,
-                          s.discountPercent,
-                        ),
-                      )}
-                    </time>
+                    <span>
+                      Итого {formatBYN(total)} · оплачено {formatBYN(paid)}
+                      {remaining > 0 && ` · остаток ${formatBYN(remaining)}`}
+                    </span>
+                    {s.payments.map((p) => (
+                      <div className="payrow" key={p.id}>
+                        <span>
+                          {formatDate(p.paidAt)} — {formatBYN(p.amount)}
+                          {p.note && ` · ${p.note}`}
+                        </span>
+                        {p.hasReceipt && (
+                          <a
+                            href={`/api/receipts/${p.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            чек
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                    {status !== "PAID" && (
+                      <button
+                        className="add"
+                        onClick={() => setPayingId(s.id)}
+                      >
+                        ＋ Оплата
+                      </button>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <button className="add" onClick={() => setSubModal(true)}>
                 ＋ Добавить абонемент
               </button>
@@ -240,6 +285,24 @@ export default function ClientsBoard({
           fixedClientId={selected.id}
           clientName={selected.name}
           onClose={() => setSubModal(false)}
+          note={note}
+        />
+      )}
+
+      {paying && (
+        <PaymentModal
+          subscriptionId={paying.id}
+          subject={paying.subject}
+          periodStart={paying.periodStart}
+          remaining={remainingAmount(
+            subscriptionTotal(
+              paying.lessonsCount,
+              paying.pricePerLesson,
+              paying.discountPercent,
+            ),
+            paidTotal(paying.payments),
+          )}
+          onClose={() => setPayingId(null)}
           note={note}
         />
       )}
