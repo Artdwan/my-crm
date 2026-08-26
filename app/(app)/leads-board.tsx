@@ -5,10 +5,24 @@ import type { Lead, LeadStatus } from "@prisma/client";
 import { STAGES, stageColor } from "@/app/lib/stages";
 import { createLead, moveLead, setLeadStatus } from "@/app/actions/leads";
 import { convertLeadToClient } from "@/app/actions/clients";
+import { copyText, renderTemplate } from "@/app/lib/templates";
 
 type LeadWithClient = Lead & { client: { id: number } | null };
 
-export default function LeadsBoard({ leads }: { leads: LeadWithClient[] }) {
+type TemplateDTO = {
+  id: number;
+  title: string;
+  body: string;
+  stage: LeadStatus | null;
+};
+
+export default function LeadsBoard({
+  leads,
+  templates,
+}: {
+  leads: LeadWithClient[];
+  templates: TemplateDTO[];
+}) {
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -50,6 +64,18 @@ export default function LeadsBoard({ leads }: { leads: LeadWithClient[] }) {
   async function handleConvert(id: number) {
     await convertLeadToClient(id);
     note("Клиент создан");
+  }
+
+  async function handleCopyTemplate(body: string, lead: LeadWithClient) {
+    const ok = await copyText(
+      renderTemplate(body, {
+        name: lead.name,
+        grade: lead.grade,
+        subject: lead.subject,
+        channel: lead.channel,
+      }),
+    );
+    note(ok ? "Текст скопирован" : "Не удалось скопировать — выделите вручную");
   }
 
   return (
@@ -375,6 +401,37 @@ export default function LeadsBoard({ leads }: { leads: LeadWithClient[] }) {
                 )}
               </section>
             )}
+            <section className="block">
+              <h3>Шаблоны ответов</h3>
+              {templates.length === 0 && (
+                <p>Шаблонов пока нет — добавьте их в разделе «Шаблоны»</p>
+              )}
+              {templates
+                // Stage-specific templates first, then the universal ones.
+                .filter((t) => t.stage === null || t.stage === selected.status)
+                .sort((a, b) => Number(a.stage === null) - Number(b.stage === null))
+                .map((t) => (
+                  <div className="tplrow" key={t.id}>
+                    <div>
+                      <b>{t.title}</b>
+                      <span>
+                        {renderTemplate(t.body, {
+                          name: selected.name,
+                          grade: selected.grade,
+                          subject: selected.subject,
+                          channel: selected.channel,
+                        })}
+                      </span>
+                    </div>
+                    <button
+                      className="rowaction"
+                      onClick={() => handleCopyTemplate(t.body, selected)}
+                    >
+                      ⧉
+                    </button>
+                  </div>
+                ))}
+            </section>
             <section className="block">
               <h3>Следующее действие</h3>
               <div className="next">

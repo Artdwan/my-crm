@@ -15,7 +15,7 @@ const NAV: { label: string; href: string | null; icon: string }[] = [
   { label: "Абонементы", href: "/subscriptions", icon: "▤" },
   { label: "Финансы", href: null, icon: "₽" },
   { label: "Реклама", href: null, icon: "↗" },
-  { label: "Шаблоны", href: null, icon: "≡" },
+  { label: "Шаблоны", href: "/templates", icon: "≡" },
 ];
 
 export default function Sidebar({
