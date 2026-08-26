@@ -5,7 +5,9 @@ import type { Client, Subscription } from "@prisma/client";
 import { createClient } from "@/app/actions/clients";
 import SubscriptionModal from "@/app/components/subscription-modal";
 import PaymentModal from "@/app/components/payment-modal";
+import StudentModal, { type StudentDraft } from "@/app/components/student-modal";
 import type { PaymentDTO } from "@/app/(app)/subscriptions/subscriptions-board";
+import type { KabinetStudent } from "@/app/lib/kabinet";
 import {
   PAYMENT_STATUS_LABEL,
   formatBYN,
@@ -26,31 +28,45 @@ type SubscriptionDTO = Omit<
   payments: PaymentDTO[];
 };
 
-type ClientWithSubs = Client & { subscriptions: SubscriptionDTO[] };
+type StudentDTO = {
+  id: number;
+  name: string;
+  grade: string;
+  kabinetStudentId: string | null;
+  subscriptions: SubscriptionDTO[];
+};
+
+type ClientWithStudents = Client & { students: StudentDTO[] };
 
 export default function ClientsBoard({
   clients,
+  roster,
 }: {
-  clients: ClientWithSubs[];
+  clients: ClientWithStudents[];
+  roster: KabinetStudent[] | null;
 }) {
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(false);
-  const [subModal, setSubModal] = useState(false);
+  const [subForStudent, setSubForStudent] = useState<StudentDTO | null>(null);
   const [payingId, setPayingId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [studentModal, setStudentModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<StudentDraft | null>(null);
   const [toast, setToast] = useState("");
 
   const filtered = useMemo(
     () =>
       clients.filter((c) =>
-        (c.name + c.grade + c.subject).toLowerCase().includes(q.toLowerCase()),
+        (c.name + c.who + c.students.map((s) => s.name + s.grade).join(" "))
+          .toLowerCase()
+          .includes(q.toLowerCase()),
       ),
     [clients, q],
   );
 
   const selected = clients.find((c) => c.id === selectedId) ?? null;
-  const paying =
-    selected?.subscriptions.find((s) => s.id === payingId) ?? null;
+  const allSubs = selected?.students.flatMap((s) => s.subscriptions) ?? [];
+  const paying = allSubs.find((s) => s.id === payingId) ?? null;
 
   const note = (x: string) => {
     setToast(x);
@@ -67,12 +83,27 @@ export default function ClientsBoard({
     note("Клиент добавлен");
   }
 
+  function openNewStudent() {
+    setEditingStudent(null);
+    setStudentModal(true);
+  }
+
+  function openEditStudent(s: StudentDTO) {
+    setEditingStudent({
+      id: s.id,
+      name: s.name,
+      grade: s.grade,
+      kabinetStudentId: s.kabinetStudentId,
+    });
+    setStudentModal(true);
+  }
+
   return (
     <>
       <header>
         <div>
           <h1>Клиенты</h1>
-          <p>Ученики и родители, которые уже оплачивают занятия</p>
+          <p>Кто платит за занятия — обычно родители учеников</p>
         </div>
         <div className="actions">
           <button className="primary" onClick={() => setModal(true)}>
@@ -87,7 +118,7 @@ export default function ClientsBoard({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Поиск по имени, классу, предмету..."
+            placeholder="Поиск по клиенту или ученику..."
           />
         </label>
       </section>
@@ -108,12 +139,19 @@ export default function ClientsBoard({
               <strong>•••</strong>
             </div>
             <div className="tags">
-              <span>{c.grade}</span>
-              <span>{c.subject}</span>
+              {c.students.length === 0 && <span>Учеников нет</span>}
+              {c.students.map((s) => (
+                <span key={s.id}>
+                  {s.name} · {s.grade}
+                </span>
+              ))}
             </div>
             <footer>
               <span>{c.channel}</span>
-              <time>{c.subscriptions.length} абонементов</time>
+              <time>
+                {c.students.reduce((n, s) => n + s.subscriptions.length, 0)}{" "}
+                абонементов
+              </time>
             </footer>
           </article>
         ))}
@@ -130,7 +168,7 @@ export default function ClientsBoard({
             <div className="mh">
               <div>
                 <b>Новый клиент</b>
-                <span>Достаточно имени, остальное можно заполнить позже</span>
+                <span>Плательщик — ученики добавляются в его карточке</span>
               </div>
               <button type="button" onClick={() => setModal(false)}>
                 ×
@@ -144,20 +182,6 @@ export default function ClientsBoard({
               <label>
                 Кто это
                 <input name="who" placeholder="мама ученика" />
-              </label>
-              <label>
-                Класс
-                <input name="grade" placeholder="9 класс" />
-              </label>
-            </div>
-            <div className="row">
-              <label>
-                Предмет
-                <select name="subject">
-                  <option>Математика</option>
-                  <option>Химия</option>
-                  <option>ЦЭ / ЦТ</option>
-                </select>
               </label>
               <label>
                 Канал
@@ -201,90 +225,124 @@ export default function ClientsBoard({
               <i style={{ background: "#7457e8" }}>{selected.name[0]}</i>
               <div>
                 <h2>{selected.name}</h2>
-                <p>
-                  {selected.grade} · {selected.subject}
-                </p>
+                <p>{selected.phone || "Телефон не указан"}</p>
               </div>
             </div>
+
             <section className="block">
-              <h3>Контакты</h3>
-              <p>{selected.phone || "Телефон не указан"}</p>
-            </section>
-            <section className="block">
-              <h3>Абонементы</h3>
-              {selected.subscriptions.length === 0 && (
-                <p>Абонементов пока нет</p>
-              )}
-              {selected.subscriptions.map((s) => {
-                const total = subscriptionTotal(
-                  s.lessonsCount,
-                  s.pricePerLesson,
-                  s.discountPercent,
-                );
-                const paid = paidTotal(s.payments);
-                const status = paymentStatus(total, paid);
-                const remaining = remainingAmount(total, paid);
-                return (
-                  <div className="subrow" key={s.id}>
-                    <div className="subhead">
-                      <b>
-                        {formatPeriod(s.periodStart)} · {s.subject}
-                      </b>
-                      <span className={`badge ${status.toLowerCase()}`}>
-                        {PAYMENT_STATUS_LABEL[status]}
-                      </span>
-                    </div>
-                    <span>
-                      {s.lessonsCount} занятий × {s.pricePerLesson} BYN
-                      {s.discountPercent > 0 &&
-                        ` · скидка ${s.discountPercent}%`}
-                    </span>
-                    <span>
-                      Итого {formatBYN(total)} · оплачено {formatBYN(paid)}
-                      {remaining > 0 && ` · остаток ${formatBYN(remaining)}`}
-                    </span>
-                    {s.payments.map((p) => (
-                      <div className="payrow" key={p.id}>
-                        <span>
-                          {formatDate(p.paidAt)} — {formatBYN(p.amount)}
-                          {p.note && ` · ${p.note}`}
-                        </span>
-                        {p.hasReceipt && (
-                          <a
-                            href={`/api/receipts/${p.id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            чек
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                    {status !== "PAID" && (
-                      <button
-                        className="add"
-                        onClick={() => setPayingId(s.id)}
-                      >
-                        ＋ Оплата
-                      </button>
-                    )}
+              <h3>Ученики</h3>
+              {selected.students.length === 0 && <p>Учеников пока нет</p>}
+              {selected.students.map((st) => (
+                <div className="subrow" key={st.id}>
+                  <div className="subhead">
+                    <b>
+                      {st.name} · {st.grade}
+                    </b>
+                    <button
+                      className="rowaction"
+                      onClick={() => openEditStudent(st)}
+                    >
+                      ✎
+                    </button>
                   </div>
-                );
-              })}
-              <button className="add" onClick={() => setSubModal(true)}>
-                ＋ Добавить абонемент
+                  <span>
+                    {st.kabinetStudentId
+                      ? `Кабинет: ${st.kabinetStudentId}`
+                      : "Не связан с «Кабинетом»"}
+                  </span>
+
+                  {st.subscriptions.map((s) => {
+                    const total = subscriptionTotal(
+                      s.lessonsCount,
+                      s.pricePerLesson,
+                      s.discountPercent,
+                    );
+                    const paid = paidTotal(s.payments);
+                    const status = paymentStatus(total, paid);
+                    const remaining = remainingAmount(total, paid);
+                    return (
+                      <div className="payrow subsub" key={s.id}>
+                        <div>
+                          <b>
+                            {formatPeriod(s.periodStart)} · {s.subject}
+                          </b>
+                          <span>
+                            Итого {formatBYN(total)} · оплачено{" "}
+                            {formatBYN(paid)}
+                            {remaining > 0 &&
+                              ` · остаток ${formatBYN(remaining)}`}
+                          </span>
+                          {s.payments.map((p) => (
+                            <span key={p.id}>
+                              {formatDate(p.paidAt)} — {formatBYN(p.amount)}
+                              {p.hasReceipt && (
+                                <>
+                                  {" · "}
+                                  <a
+                                    href={`/api/receipts/${p.id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    чек
+                                  </a>
+                                </>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="payside">
+                          <span className={`badge ${status.toLowerCase()}`}>
+                            {PAYMENT_STATUS_LABEL[status]}
+                          </span>
+                          {status !== "PAID" && (
+                            <button
+                              className="rowaction"
+                              onClick={() => setPayingId(s.id)}
+                            >
+                              ＋ Оплата
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    className="add"
+                    onClick={() => setSubForStudent(st)}
+                  >
+                    ＋ Абонемент
+                  </button>
+                </div>
+              ))}
+              <button className="add" onClick={openNewStudent}>
+                ＋ Добавить ученика
               </button>
             </section>
           </aside>
         </div>
       )}
 
-      {subModal && selected && (
-        <SubscriptionModal
-          clients={[]}
-          fixedClientId={selected.id}
+      {studentModal && selected && (
+        <StudentModal
+          clientId={selected.id}
           clientName={selected.name}
-          onClose={() => setSubModal(false)}
+          editing={editingStudent}
+          roster={roster}
+          onClose={() => {
+            setStudentModal(false);
+            setEditingStudent(null);
+          }}
+          note={note}
+        />
+      )}
+
+      {subForStudent && (
+        <SubscriptionModal
+          students={[]}
+          fixedStudentId={subForStudent.id}
+          studentName={subForStudent.name}
+          onClose={() => setSubForStudent(null)}
           note={note}
         />
       )}

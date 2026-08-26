@@ -28,16 +28,28 @@ type SubscriptionDTO = Omit<
 > & {
   pricePerLesson: number;
   discountPercent: number;
-  client: { id: number; name: string };
+  student: {
+    id: number;
+    name: string;
+    grade: string;
+    client: { id: number; name: string };
+  };
   payments: PaymentDTO[];
+};
+
+type StudentOption = {
+  id: number;
+  name: string;
+  grade: string;
+  clientName: string;
 };
 
 export default function SubscriptionsBoard({
   subscriptions,
-  clients,
+  students,
 }: {
   subscriptions: SubscriptionDTO[];
-  clients: { id: number; name: string }[];
+  students: StudentOption[];
 }) {
   const [modal, setModal] = useState(false);
   const [payingId, setPayingId] = useState<number | null>(null);
@@ -55,26 +67,29 @@ export default function SubscriptionsBoard({
       <header>
         <div>
           <h1>Абонементы</h1>
-          <p>Все действующие абонементы по клиентам</p>
+          <p>Все действующие абонементы по ученикам</p>
         </div>
         <div className="actions">
           <button
             className="primary"
             onClick={() => setModal(true)}
-            disabled={clients.length === 0}
+            disabled={students.length === 0}
           >
             ＋ Добавить абонемент
           </button>
         </div>
       </header>
 
-      {clients.length === 0 ? (
-        <p>Сначала добавьте клиента на странице «Клиенты»</p>
+      {students.length === 0 ? (
+        <p>
+          Сначала добавьте клиента и его учеников на странице «Клиенты»
+        </p>
       ) : (
         <div className="tablewrap">
           <table className="table">
             <thead>
               <tr>
+                <th>Ученик</th>
                 <th>Клиент</th>
                 <th>Предмет</th>
                 <th>Период</th>
@@ -99,7 +114,10 @@ export default function SubscriptionsBoard({
                 const status = paymentStatus(total, paid);
                 return (
                   <tr key={s.id}>
-                    <td>{s.client.name}</td>
+                    <td>
+                      {s.student.name} · {s.student.grade}
+                    </td>
+                    <td>{s.student.client.name}</td>
                     <td>{s.subject}</td>
                     <td>{formatPeriod(s.periodStart)}</td>
                     <td>{s.lessonsCount}</td>
@@ -130,7 +148,7 @@ export default function SubscriptionsBoard({
               })}
               {subscriptions.length === 0 && (
                 <tr>
-                  <td colSpan={11}>Абонементов пока нет</td>
+                  <td colSpan={12}>Абонементов пока нет</td>
                 </tr>
               )}
             </tbody>
@@ -140,7 +158,7 @@ export default function SubscriptionsBoard({
 
       {modal && (
         <SubscriptionModal
-          clients={clients}
+          students={students}
           onClose={() => setModal(false)}
           note={note}
         />

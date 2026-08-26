@@ -8,7 +8,7 @@ import { verifySession } from "@/app/lib/dal";
 export async function createSubscription(formData: FormData) {
   await verifySession();
 
-  const clientId = Number(formData.get("clientId"));
+  const studentId = Number(formData.get("studentId"));
   const period = String(formData.get("periodStart") || "");
   const lessonsCount = Number(formData.get("lessonsCount"));
   const pricePerLesson = String(formData.get("pricePerLesson") || "").trim();
@@ -16,14 +16,14 @@ export async function createSubscription(formData: FormData) {
     String(formData.get("discountPercent") || "").trim() || "0";
   const subject = String(formData.get("subject") || "").trim();
 
-  if (!clientId || !period || !lessonsCount || !pricePerLesson || !subject) {
+  if (!studentId || !period || !lessonsCount || !pricePerLesson || !subject) {
     return;
   }
 
   try {
     await prisma.subscription.create({
       data: {
-        clientId,
+        studentId,
         subject,
         periodStart: new Date(`${period}-01`),
         lessonsCount,
@@ -43,4 +43,5 @@ export async function createSubscription(formData: FormData) {
 
   revalidatePath("/subscriptions");
   revalidatePath("/clients");
+  revalidatePath("/students");
 }

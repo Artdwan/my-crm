@@ -2,11 +2,18 @@ import { prisma } from "@/app/lib/prisma";
 import SubscriptionsBoard from "./subscriptions-board";
 
 export default async function SubscriptionsPage() {
-  const [rows, clients] = await Promise.all([
+  const [rows, studentRows] = await Promise.all([
     prisma.subscription.findMany({
       orderBy: { periodStart: "desc" },
       include: {
-        client: { select: { id: true, name: true } },
+        student: {
+          select: {
+            id: true,
+            name: true,
+            grade: true,
+            client: { select: { id: true, name: true } },
+          },
+        },
         // Metadata only — never select receiptData here, or every page load
         // would pull every receipt's bytes out of the database.
         payments: {
@@ -21,8 +28,13 @@ export default async function SubscriptionsPage() {
         },
       },
     }),
-    prisma.client.findMany({
-      select: { id: true, name: true },
+    prisma.student.findMany({
+      select: {
+        id: true,
+        name: true,
+        grade: true,
+        client: { select: { name: true } },
+      },
       orderBy: { name: "asc" },
     }),
   ]);
@@ -38,5 +50,14 @@ export default async function SubscriptionsPage() {
     })),
   }));
 
-  return <SubscriptionsBoard subscriptions={subscriptions} clients={clients} />;
+  const students = studentRows.map((s) => ({
+    id: s.id,
+    name: s.name,
+    grade: s.grade,
+    clientName: s.client.name,
+  }));
+
+  return (
+    <SubscriptionsBoard subscriptions={subscriptions} students={students} />
+  );
 }

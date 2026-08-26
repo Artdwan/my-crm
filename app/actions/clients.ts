@@ -14,8 +14,6 @@ export async function createClient(formData: FormData) {
     data: {
       name,
       who: String(formData.get("who") || "").trim() || "клиент",
-      grade: String(formData.get("grade") || "").trim() || "Класс не указан",
-      subject: String(formData.get("subject") || ""),
       channel: String(formData.get("channel") || ""),
       phone: String(formData.get("phone") || "").trim() || null,
     },
@@ -29,19 +27,26 @@ export async function convertLeadToClient(leadId: number) {
 
   const lead = await prisma.lead.findUniqueOrThrow({ where: { id: leadId } });
 
+  // A lead describes the child even when the person writing is the parent,
+  // so the conversion seeds both: the payer and their first student.
   await prisma.client.upsert({
     where: { fromLeadId: leadId },
     update: {},
     create: {
       name: lead.name,
       who: lead.who,
-      grade: lead.grade,
-      subject: lead.subject,
       channel: lead.channel,
       fromLeadId: lead.id,
+      students: {
+        create: {
+          name: lead.name,
+          grade: lead.grade,
+        },
+      },
     },
   });
 
   revalidatePath("/");
   revalidatePath("/clients");
+  revalidatePath("/students");
 }

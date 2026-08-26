@@ -4,15 +4,15 @@ import { type FormEvent } from "react";
 import { createSubscription } from "@/app/actions/subscriptions";
 
 export default function SubscriptionModal({
-  clients,
-  fixedClientId,
-  clientName,
+  students,
+  fixedStudentId,
+  studentName,
   onClose,
   note,
 }: {
-  clients: { id: number; name: string }[];
-  fixedClientId?: number;
-  clientName?: string;
+  students: { id: number; name: string; grade: string; clientName: string }[];
+  fixedStudentId?: number;
+  studentName?: string;
   onClose: () => void;
   note: (msg: string) => void;
 }) {
@@ -20,7 +20,7 @@ export default function SubscriptionModal({
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
-    if (fixedClientId) fd.set("clientId", String(fixedClientId));
+    if (fixedStudentId) fd.set("studentId", String(fixedStudentId));
     await createSubscription(fd);
     form.reset();
     onClose();
@@ -38,23 +38,25 @@ export default function SubscriptionModal({
           <div>
             <b>Новый абонемент</b>
             <span>
-              {clientName ? `Для клиента: ${clientName}` : "Укажите клиента и параметры"}
+              {studentName
+                ? `Для ученика: ${studentName}`
+                : "Укажите ученика и параметры"}
             </span>
           </div>
           <button type="button" onClick={onClose}>
             ×
           </button>
         </div>
-        {!fixedClientId && (
+        {!fixedStudentId && (
           <label>
-            Клиент
-            <select name="clientId" required defaultValue="">
+            Ученик
+            <select name="studentId" required defaultValue="">
               <option value="" disabled>
-                Выберите клиента
+                Выберите ученика
               </option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} · {s.grade} · платит {s.clientName}
                 </option>
               ))}
             </select>

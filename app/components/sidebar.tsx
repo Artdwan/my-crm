@@ -9,7 +9,7 @@ const NAV: { label: string; href: string | null; icon: string }[] = [
   { label: "Обзор", href: null, icon: "⌂" },
   { label: "Лиды", href: "/", icon: "▦" },
   { label: "Клиенты", href: "/clients", icon: "♙" },
-  { label: "Ученики", href: null, icon: "♟" },
+  { label: "Ученики", href: "/students", icon: "♟" },
   { label: "Календарь", href: null, icon: "□" },
   { label: "Занятия", href: null, icon: "◉" },
   { label: "Абонементы", href: "/subscriptions", icon: "▤" },

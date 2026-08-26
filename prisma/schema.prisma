@@ -42,24 +42,38 @@ model Lead {
   updatedAt DateTime   @updatedAt
 }
 
+/// Плательщик — обычно родитель, иногда сам ученик (например, 11 класс).
 model Client {
-  id            Int            @id @default(autoincrement())
-  name          String
-  who           String
-  grade         String
-  subject       String
-  channel       String
-  phone         String?
-  fromLead      Lead?          @relation(fields: [fromLeadId], references: [id])
-  fromLeadId    Int?           @unique
-  subscriptions Subscription[]
-  createdAt     DateTime       @default(now())
+  id         Int       @id @default(autoincrement())
+  name       String
+  who        String
+  channel    String
+  phone      String?
+  fromLead   Lead?     @relation(fields: [fromLeadId], references: [id])
+  fromLeadId Int?      @unique
+  students   Student[]
+  createdAt  DateTime  @default(now())
+}
+
+/// Ученик, за которого платит клиент. Намеренно «тонкий»: источник правды
+/// по успеваемости, занятиям и посещаемости — «Кабинет ученика».
+model Student {
+  id               Int            @id @default(autoincrement())
+  client           Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId         Int
+  name             String
+  grade            String
+  /// id ученика в «Кабинете» (users.id, например "acc-st"). null — не связан.
+  kabinetStudentId String?        @unique
+  kabinetSyncedAt  DateTime?
+  subscriptions    Subscription[]
+  createdAt        DateTime       @default(now())
 }
 
 model Subscription {
   id              Int       @id @default(autoincrement())
-  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId        Int
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId       Int
   subject         String
   periodStart     DateTime
   lessonsCount    Int
@@ -68,7 +82,7 @@ model Subscription {
   payments        Payment[]
   createdAt       DateTime  @default(now())
 
-  @@unique([clientId, subject, periodStart])
+  @@unique([studentId, subject, periodStart])
 }
 
 model Template {

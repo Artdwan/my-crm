@@ -625,6 +625,50 @@ header p {
   margin-top: 4px;
 }
 
+/* A subscription nested under a student inside the client drawer. */
+.payrow.subsub {
+  align-items: flex-start;
+}
+
+.payrow.subsub > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.payrow.subsub b {
+  font-size: 12px;
+  color: var(--foreground);
+}
+
+.payside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--card-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 0;
+}
+
+.grid .card footer a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.grid .card footer a:hover {
+  text-decoration: underline;
+}
+
 /* ---------- board ---------- */
 
 .workspace {
