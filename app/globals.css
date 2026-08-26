@@ -165,7 +165,14 @@ nav button.active em {
   gap: 4px;
 }
 
-.bottom > button {
+.bottom > button,
+.bottom form {
+  margin: 0;
+}
+
+.bottom > button,
+.bottom form > button {
+  width: 100%;
   text-align: left;
   border: none;
   background: transparent;
@@ -175,7 +182,8 @@ nav button.active em {
   border-radius: 8px;
 }
 
-.bottom > button:hover {
+.bottom > button:hover,
+.bottom form > button:hover {
   background: var(--primary-soft);
   color: var(--foreground);
 }
@@ -968,6 +976,82 @@ header p {
   font-size: 13px;
   z-index: 100;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- auth ---------- */
+
+.authwrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.authcard {
+  width: 360px;
+  max-width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.authcard .brand {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding: 0 0 4px;
+}
+
+.authcard h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.authcard > p {
+  margin: -8px 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.authcard label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.authcard input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--foreground);
+  background: var(--card-raised);
+  outline: none;
+  width: 100%;
+}
+
+.authcard input:focus {
+  border-color: var(--primary);
+}
+
+.autherror {
+  font-size: 12px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.authcard button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* ---------- responsive ---------- */

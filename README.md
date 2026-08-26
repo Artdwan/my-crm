@@ -2,19 +2,33 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+This project needs a PostgreSQL database and a couple of environment
+variables before it will run.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Copy `.env.example` to `.env` and fill in `POSTGRES_PASSWORD`,
+   `SESSION_SECRET` (generate one with
+   `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`)
+   and `ADMIN_PASSWORD`.
+2. Start Postgres (via Docker):
+   ```bash
+   docker compose up -d db
+   ```
+3. Apply migrations and seed the admin user:
+   ```bash
+   npx prisma migrate dev --name init
+   npx prisma db seed
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and log in with the
+`ADMIN_USERNAME`/`ADMIN_PASSWORD` from your `.env`.
+
+To run the whole app (not just the database) in Docker, use
+`docker compose up --build` instead — it builds the app image, runs
+migrations and seeding automatically, then starts the server on port 3000.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
