@@ -163,6 +163,35 @@ nav a.active em {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* Заголовок группы разделов: CRM / Кабинет ученика */
+.navgroup {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  opacity: 0.7;
+  padding: 4px 10px;
+  margin-top: 2px;
+}
+
+.navgroup.sep {
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+  padding-top: 12px;
+}
+
+/* Стрелка «наружу» у ссылок в другое приложение. */
+nav a em.ext {
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 10px;
+  padding: 0;
+}
+
+nav a:hover em.ext {
+  color: var(--primary);
+}
+
 .bottom {
   border-top: 1px solid var(--border);
   margin-top: 10px;

@@ -39,15 +39,21 @@ export function isKabinetConfigured(): boolean {
 }
 
 /**
+ * Origin of Кабинет's SPA. The API is mounted under /api on the same host,
+ * so the app itself sits one level up.
+ */
+export function kabinetAppUrl(): string | null {
+  const base = kabinetBaseUrl();
+  return base ? base.replace(/\/api$/, "") : null;
+}
+
+/**
  * Кабинет's own SPA route for a student profile, so a linked student can be
  * opened where the teaching data actually lives.
  */
 export function kabinetStudentUrl(kabinetStudentId: string): string | null {
-  const base = kabinetBaseUrl();
-  if (!base) return null;
-  // The API is mounted under /api; the SPA sits at the same origin.
-  const origin = base.replace(/\/api$/, "");
-  return `${origin}/teacher/students/${kabinetStudentId}`;
+  const origin = kabinetAppUrl();
+  return origin ? `${origin}/teacher/students/${kabinetStudentId}` : null;
 }
 
 export async function fetchRoster(): Promise<KabinetStudent[] | null> {
